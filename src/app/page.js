@@ -129,7 +129,7 @@ export default function Home() {
             <h2 className="font-medium">Correlation with Assessment Score</h2>
             <label className="text-xs inline-flex items-center gap-2">
               <input type="checkbox" className="accent-indigo-600" checked={syncWithSelected} onChange={(e)=>setSyncWithSelected(e.target.checked)} />
-              Sync with selected student's class
+              {"Sync with selected student\u2019s class"}
             </label>
           </div>
           <ResponsiveContainer width="100%" height="100%">
@@ -298,7 +298,7 @@ function StudentsTable({ data, personaById }) {
       return 0;
     });
     return arr;
-  }, [filtered, sortKey, sortDir]);
+  }, [filtered, sortKey, sortDir, personaById]);
 
   const setSort = (key) => {
     if (key === sortKey) {
