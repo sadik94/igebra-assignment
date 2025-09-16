@@ -19,7 +19,7 @@ import {
   PolarRadiusAxis,
   Radar,
 } from "recharts";
- 
+
 export default function Home() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -98,7 +98,7 @@ export default function Home() {
   if (error) return <div className="p-8 text-red-600">{error}</div>;
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-8">
+    <div className="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8">
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Cognitive Skills & Performance Dashboard</h1>
         <div className="flex items-center gap-3">
@@ -133,9 +133,9 @@ export default function Home() {
             </label>
           </div>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={skillVsScore} margin={{ top: 10, right: 10, left: 10, bottom: 24 }}>
+            <BarChart data={skillVsScore} margin={{ top: 10, right: 10, left: 10, bottom: 40 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="skill" tick={{ fontSize: 12 }} />
+              <XAxis dataKey="skill" tick={{ fontSize: 12 }} tickMargin={12} interval={0} />
               <YAxis domain={[-1, 1]} tick={{ fontSize: 12 }} />
               <Tooltip />
               <Bar dataKey="score" fill="#4f46e5" />
@@ -146,9 +146,9 @@ export default function Home() {
         <div className="h-96 border rounded-md p-4 overflow-hidden">
           <h2 className="mb-2 font-medium">Attention vs Assessment Score</h2>
           <ResponsiveContainer width="100%" height="100%">
-            <ScatterChart margin={{ top: 10, right: 10, left: 10, bottom: 24 }}>
+            <ScatterChart margin={{ top: 10, right: 10, left: 10, bottom: 40 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" dataKey="attention" name="Attention" domain={[0, 100]} tick={{ fontSize: 12 }} />
+              <XAxis type="number" dataKey="attention" name="Attention" domain={[0, 100]} tick={{ fontSize: 12 }} tickMargin={12} />
               <YAxis type="number" dataKey="assessment_score" name="Score" domain={[0, 100]} tick={{ fontSize: 12 }} />
               <Tooltip cursor={{ strokeDasharray: "3 3" }} />
               <Scatter data={cohortStudents} fill="#10b981" />
