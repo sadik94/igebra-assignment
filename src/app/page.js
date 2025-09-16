@@ -19,14 +19,18 @@ import {
   PolarRadiusAxis,
   Radar,
 } from "recharts";
-
+ 
 export default function Home() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [modelMetrics, setModelMetrics] = useState(null);
+  const [modelInfo, setModelInfo] = useState(null);
   const [personaById, setPersonaById] = useState({});
   const [personaCounts, setPersonaCounts] = useState([]);
+  const [radarIndex, setRadarIndex] = useState(0);
+  const [personaFilter, setPersonaFilter] = useState("all");
+  const [syncWithSelected, setSyncWithSelected] = useState(true);
 
   useEffect(() => {
     Promise.all([
@@ -36,7 +40,10 @@ export default function Home() {
     ])
       .then(([studentsData, modelData, personasData]) => {
         setStudents(studentsData);
-        if (modelData?.metrics) setModelMetrics(modelData.metrics);
+        if (modelData) {
+          setModelInfo(modelData);
+          if (modelData.metrics) setModelMetrics(modelData.metrics);
+        }
         if (personasData?.personas) {
           const map = {};
           for (const p of personasData.personas) map[p.student_id] = p.persona;
@@ -68,24 +75,42 @@ export default function Home() {
     };
   }, [students]);
 
-  const skillVsScore = useMemo(() => {
+  const selectedStudent = students[radarIndex];
+
+  const cohortStudents = useMemo(() => {
     if (!students.length) return [];
+    if (!syncWithSelected || !selectedStudent) return students;
+    // Use the selected student's class as a cohort
+    return students.filter((s) => s.class === selectedStudent.class);
+  }, [students, syncWithSelected, selectedStudent]);
+
+  const skillVsScore = useMemo(() => {
+    if (!cohortStudents.length) return [];
     return [
-      { skill: "attention", score: corr(students, "attention") },
-      { skill: "focus", score: corr(students, "focus") },
-      { skill: "comprehension", score: corr(students, "comprehension") },
-      { skill: "retention", score: corr(students, "retention") },
+      { skill: "attention", score: corr(cohortStudents, "attention") },
+      { skill: "focus", score: corr(cohortStudents, "focus") },
+      { skill: "comprehension", score: corr(cohortStudents, "comprehension") },
+      { skill: "retention", score: corr(cohortStudents, "retention") },
     ];
-  }, [students]);
+  }, [cohortStudents]);
 
   if (loading) return <div className="p-8">Loading…</div>;
   if (error) return <div className="p-8 text-red-600">{error}</div>;
 
-  const [radarIndex, setRadarIndex] = useState(0);
-
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-8">
-      <h1 className="text-2xl font-semibold">Cognitive Skills & Performance Dashboard</h1>
+      <header className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Cognitive Skills & Performance Dashboard</h1>
+        <div className="flex items-center gap-3">
+          <div className="text-sm text-gray-500">Persona:</div>
+          <select className="border rounded px-2 py-1 text-sm" value={personaFilter} onChange={(e)=>setPersonaFilter(e.target.value)}>
+            <option value="all">All</option>
+            {personaCounts.map(p=> (
+              <option key={p.persona} value={String(p.persona)}>Persona {p.persona}</option>
+            ))}
+          </select>
+        </div>
+      </header>
 
       {kpis && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -99,33 +124,42 @@ export default function Home() {
       )}
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="h-80 border rounded-md p-4">
-          <h2 className="mb-2 font-medium">Correlation with Assessment Score</h2>
+        <div className="h-96 border rounded-md p-4 overflow-hidden">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-medium">Correlation with Assessment Score</h2>
+            <label className="text-xs inline-flex items-center gap-2">
+              <input type="checkbox" className="accent-indigo-600" checked={syncWithSelected} onChange={(e)=>setSyncWithSelected(e.target.checked)} />
+              Sync with selected student's class
+            </label>
+          </div>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={skillVsScore}>
+            <BarChart data={skillVsScore} margin={{ top: 10, right: 10, left: 10, bottom: 24 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="skill" />
-              <YAxis domain={[-1, 1]} />
+              <XAxis dataKey="skill" tick={{ fontSize: 12 }} />
+              <YAxis domain={[-1, 1]} tick={{ fontSize: 12 }} />
               <Tooltip />
               <Bar dataKey="score" fill="#4f46e5" />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="h-80 border rounded-md p-4">
+        <div className="h-96 border rounded-md p-4 overflow-hidden">
           <h2 className="mb-2 font-medium">Attention vs Assessment Score</h2>
           <ResponsiveContainer width="100%" height="100%">
-            <ScatterChart>
+            <ScatterChart margin={{ top: 10, right: 10, left: 10, bottom: 24 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" dataKey="attention" name="Attention" domain={[0, 100]} />
-              <YAxis type="number" dataKey="assessment_score" name="Score" domain={[0, 100]} />
+              <XAxis type="number" dataKey="attention" name="Attention" domain={[0, 100]} tick={{ fontSize: 12 }} />
+              <YAxis type="number" dataKey="assessment_score" name="Score" domain={[0, 100]} tick={{ fontSize: 12 }} />
               <Tooltip cursor={{ strokeDasharray: "3 3" }} />
-              <Scatter data={students} fill="#10b981" />
+              <Scatter data={cohortStudents} fill="#10b981" />
+              {selectedStudent ? (
+                <Scatter data={[selectedStudent]} fill="#ef4444" />
+              ) : null}
             </ScatterChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="h-80 border rounded-md p-4">
+        <div className="h-96 border rounded-md p-4 overflow-hidden">
           <div className="flex items-center justify-between mb-2">
             <h2 className="font-medium">Student Profile (Radar)</h2>
             <select
@@ -143,11 +177,11 @@ export default function Home() {
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart
               data={toRadarData(students[radarIndex])}
-              outerRadius="75%"
+              outerRadius="70%"
             >
               <PolarGrid />
-              <PolarAngleAxis dataKey="metric" />
-              <PolarRadiusAxis angle={30} domain={[0, 100]} />
+              <PolarAngleAxis dataKey="metric" tick={{ fontSize: 12 }} />
+              <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} />
               <Radar name="Score" dataKey="value" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.5} />
               <Tooltip />
             </RadarChart>
@@ -157,7 +191,7 @@ export default function Home() {
 
       <section>
         <h2 className="mb-2 font-medium">Students</h2>
-        <StudentsTable data={students} personaById={personaById} />
+        <StudentsTable data={students.filter(s => personaFilter==='all' ? true : String(personaById[s.student_id])===personaFilter)} personaById={personaById} />
       </section>
 
       <section className="border rounded-md p-4">
@@ -178,6 +212,16 @@ export default function Home() {
           )}
           <li>Use radar to inspect individual strengths across skills.</li>
         </ul>
+        {modelInfo?.coefficients && (
+          <div className="mt-3 text-sm">
+            <div className="font-medium mb-1">Model coefficients</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+              {Object.entries(modelInfo.coefficients).map(([k,v]) => (
+                <div key={k} className="border rounded px-2 py-1">{k}: <span className="font-mono">{Number(v).toFixed(3)}</span></div>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
     </div>
   );

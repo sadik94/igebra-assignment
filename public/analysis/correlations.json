@@ -1,0 +1,60 @@
+{
+  "matrix": {
+    "attention": {
+      "attention": 1,
+      "focus": 0.748,
+      "comprehension": 0.784,
+      "retention": 0.742,
+      "engagement_time": -0.008,
+      "assessment_score": 0.906
+    },
+    "focus": {
+      "attention": 0.748,
+      "focus": 1,
+      "comprehension": 0.704,
+      "retention": 0.673,
+      "engagement_time": -0.021,
+      "assessment_score": 0.868
+    },
+    "comprehension": {
+      "attention": 0.784,
+      "focus": 0.704,
+      "comprehension": 1,
+      "retention": 0.652,
+      "engagement_time": -0.043,
+      "assessment_score": 0.861
+    },
+    "retention": {
+      "attention": 0.742,
+      "focus": 0.673,
+      "comprehension": 0.652,
+      "retention": 1,
+      "engagement_time": -0.089,
+      "assessment_score": 0.815
+    },
+    "engagement_time": {
+      "attention": -0.008,
+      "focus": -0.021,
+      "comprehension": -0.043,
+      "retention": -0.089,
+      "engagement_time": 1,
+      "assessment_score": -0.045
+    },
+    "assessment_score": {
+      "attention": 0.906,
+      "focus": 0.868,
+      "comprehension": 0.861,
+      "retention": 0.815,
+      "engagement_time": -0.045,
+      "assessment_score": 1
+    }
+  },
+  "sorted_vs_score": {
+    "assessment_score": 1,
+    "attention": 0.906,
+    "focus": 0.868,
+    "comprehension": 0.861,
+    "retention": 0.815,
+    "engagement_time": -0.045
+  }
+}

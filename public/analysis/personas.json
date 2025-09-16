@@ -1,0 +1,747 @@
+{
+  "personas": [
+    {
+      "student_id": 1,
+      "name": "Aarav A",
+      "class": "A",
+      "persona": 0
+    },
+    {
+      "student_id": 2,
+      "name": "Vihaan A",
+      "class": "B",
+      "persona": 0
+    },
+    {
+      "student_id": 3,
+      "name": "Vivaan A",
+      "class": "C",
+      "persona": 1
+    },
+    {
+      "student_id": 4,
+      "name": "Ananya A",
+      "class": "D",
+      "persona": 2
+    },
+    {
+      "student_id": 5,
+      "name": "Diya A",
+      "class": "A",
+      "persona": 0
+    },
+    {
+      "student_id": 6,
+      "name": "Ishaan A",
+      "class": "B",
+      "persona": 0
+    },
+    {
+      "student_id": 7,
+      "name": "Kabir A",
+      "class": "C",
+      "persona": 1
+    },
+    {
+      "student_id": 8,
+      "name": "Advait A",
+      "class": "D",
+      "persona": 0
+    },
+    {
+      "student_id": 9,
+      "name": "Sara A",
+      "class": "A",
+      "persona": 0
+    },
+    {
+      "student_id": 10,
+      "name": "Zara A",
+      "class": "B",
+      "persona": 1
+    },
+    {
+      "student_id": 11,
+      "name": "Riya A",
+      "class": "C",
+      "persona": 1
+    },
+    {
+      "student_id": 12,
+      "name": "Aanya A",
+      "class": "D",
+      "persona": 2
+    },
+    {
+      "student_id": 13,
+      "name": "Arjun A",
+      "class": "A",
+      "persona": 0
+    },
+    {
+      "student_id": 14,
+      "name": "Reyansh A",
+      "class": "B",
+      "persona": 0
+    },
+    {
+      "student_id": 15,
+      "name": "Ira A",
+      "class": "C",
+      "persona": 1
+    },
+    {
+      "student_id": 16,
+      "name": "Mira A",
+      "class": "D",
+      "persona": 2
+    },
+    {
+      "student_id": 17,
+      "name": "Neel A",
+      "class": "A",
+      "persona": 0
+    },
+    {
+      "student_id": 18,
+      "name": "Om A",
+      "class": "B",
+      "persona": 1
+    },
+    {
+      "student_id": 19,
+      "name": "Pari A",
+      "class": "C",
+      "persona": 2
+    },
+    {
+      "student_id": 20,
+      "name": "Tara A",
+      "class": "D",
+      "persona": 0
+    },
+    {
+      "student_id": 21,
+      "name": "Veer A",
+      "class": "A",
+      "persona": 2
+    },
+    {
+      "student_id": 22,
+      "name": "Yash A",
+      "class": "B",
+      "persona": 2
+    },
+    {
+      "student_id": 23,
+      "name": "Anvi A",
+      "class": "C",
+      "persona": 0
+    },
+    {
+      "student_id": 24,
+      "name": "Kiara A",
+      "class": "D",
+      "persona": 2
+    },
+    {
+      "student_id": 25,
+      "name": "Ishan A",
+      "class": "A",
+      "persona": 2
+    },
+    {
+      "student_id": 26,
+      "name": "Aryan A",
+      "class": "B",
+      "persona": 2
+    },
+    {
+      "student_id": 27,
+      "name": "Krish A",
+      "class": "C",
+      "persona": 2
+    },
+    {
+      "student_id": 28,
+      "name": "Ruhi A",
+      "class": "D",
+      "persona": 0
+    },
+    {
+      "student_id": 29,
+      "name": "Simran A",
+      "class": "A",
+      "persona": 0
+    },
+    {
+      "student_id": 30,
+      "name": "Tanvi A",
+      "class": "B",
+      "persona": 0
+    },
+    {
+      "student_id": 31,
+      "name": "Naina A",
+      "class": "C",
+      "persona": 2
+    },
+    {
+      "student_id": 32,
+      "name": "Meera A",
+      "class": "D",
+      "persona": 1
+    },
+    {
+      "student_id": 33,
+      "name": "Laksh A",
+      "class": "A",
+      "persona": 0
+    },
+    {
+      "student_id": 34,
+      "name": "Aadi A",
+      "class": "B",
+      "persona": 1
+    },
+    {
+      "student_id": 35,
+      "name": "Rudra A",
+      "class": "C",
+      "persona": 0
+    },
+    {
+      "student_id": 36,
+      "name": "Shaurya A",
+      "class": "D",
+      "persona": 1
+    },
+    {
+      "student_id": 37,
+      "name": "Saanvi A",
+      "class": "A",
+      "persona": 1
+    },
+    {
+      "student_id": 38,
+      "name": "Navya A",
+      "class": "B",
+      "persona": 2
+    },
+    {
+      "student_id": 39,
+      "name": "Aarohi A",
+      "class": "C",
+      "persona": 2
+    },
+    {
+      "student_id": 40,
+      "name": "Anika A",
+      "class": "D",
+      "persona": 0
+    },
+    {
+      "student_id": 41,
+      "name": "Hridaan A",
+      "class": "A",
+      "persona": 1
+    },
+    {
+      "student_id": 42,
+      "name": "Aarush A",
+      "class": "B",
+      "persona": 1
+    },
+    {
+      "student_id": 43,
+      "name": "Prisha A",
+      "class": "C",
+      "persona": 1
+    },
+    {
+      "student_id": 44,
+      "name": "Aaradhya A",
+      "class": "D",
+      "persona": 0
+    },
+    {
+      "student_id": 45,
+      "name": "Arihant A",
+      "class": "A",
+      "persona": 0
+    },
+    {
+      "student_id": 46,
+      "name": "Atharv A",
+      "class": "B",
+      "persona": 0
+    },
+    {
+      "student_id": 47,
+      "name": "Ishita A",
+      "class": "C",
+      "persona": 1
+    },
+    {
+      "student_id": 48,
+      "name": "Myra A",
+      "class": "D",
+      "persona": 1
+    },
+    {
+      "student_id": 49,
+      "name": "Reva A",
+      "class": "A",
+      "persona": 2
+    },
+    {
+      "student_id": 50,
+      "name": "Sarika A",
+      "class": "B",
+      "persona": 0
+    },
+    {
+      "student_id": 51,
+      "name": "Aarav B",
+      "class": "C",
+      "persona": 0
+    },
+    {
+      "student_id": 52,
+      "name": "Vihaan B",
+      "class": "D",
+      "persona": 2
+    },
+    {
+      "student_id": 53,
+      "name": "Vivaan B",
+      "class": "A",
+      "persona": 0
+    },
+    {
+      "student_id": 54,
+      "name": "Ananya B",
+      "class": "B",
+      "persona": 2
+    },
+    {
+      "student_id": 55,
+      "name": "Diya B",
+      "class": "C",
+      "persona": 1
+    },
+    {
+      "student_id": 56,
+      "name": "Ishaan B",
+      "class": "D",
+      "persona": 2
+    },
+    {
+      "student_id": 57,
+      "name": "Kabir B",
+      "class": "A",
+      "persona": 1
+    },
+    {
+      "student_id": 58,
+      "name": "Advait B",
+      "class": "B",
+      "persona": 0
+    },
+    {
+      "student_id": 59,
+      "name": "Sara B",
+      "class": "C",
+      "persona": 0
+    },
+    {
+      "student_id": 60,
+      "name": "Zara B",
+      "class": "D",
+      "persona": 2
+    },
+    {
+      "student_id": 61,
+      "name": "Riya B",
+      "class": "A",
+      "persona": 1
+    },
+    {
+      "student_id": 62,
+      "name": "Aanya B",
+      "class": "B",
+      "persona": 0
+    },
+    {
+      "student_id": 63,
+      "name": "Arjun B",
+      "class": "C",
+      "persona": 2
+    },
+    {
+      "student_id": 64,
+      "name": "Reyansh B",
+      "class": "D",
+      "persona": 0
+    },
+    {
+      "student_id": 65,
+      "name": "Ira B",
+      "class": "A",
+      "persona": 0
+    },
+    {
+      "student_id": 66,
+      "name": "Mira B",
+      "class": "B",
+      "persona": 1
+    },
+    {
+      "student_id": 67,
+      "name": "Neel B",
+      "class": "C",
+      "persona": 2
+    },
+    {
+      "student_id": 68,
+      "name": "Om B",
+      "class": "D",
+      "persona": 0
+    },
+    {
+      "student_id": 69,
+      "name": "Pari B",
+      "class": "A",
+      "persona": 0
+    },
+    {
+      "student_id": 70,
+      "name": "Tara B",
+      "class": "B",
+      "persona": 2
+    },
+    {
+      "student_id": 71,
+      "name": "Veer B",
+      "class": "C",
+      "persona": 0
+    },
+    {
+      "student_id": 72,
+      "name": "Yash B",
+      "class": "D",
+      "persona": 0
+    },
+    {
+      "student_id": 73,
+      "name": "Anvi B",
+      "class": "A",
+      "persona": 0
+    },
+    {
+      "student_id": 74,
+      "name": "Kiara B",
+      "class": "B",
+      "persona": 0
+    },
+    {
+      "student_id": 75,
+      "name": "Ishan B",
+      "class": "C",
+      "persona": 0
+    },
+    {
+      "student_id": 76,
+      "name": "Aryan B",
+      "class": "D",
+      "persona": 2
+    },
+    {
+      "student_id": 77,
+      "name": "Krish B",
+      "class": "A",
+      "persona": 1
+    },
+    {
+      "student_id": 78,
+      "name": "Ruhi B",
+      "class": "B",
+      "persona": 2
+    },
+    {
+      "student_id": 79,
+      "name": "Simran B",
+      "class": "C",
+      "persona": 0
+    },
+    {
+      "student_id": 80,
+      "name": "Tanvi B",
+      "class": "D",
+      "persona": 1
+    },
+    {
+      "student_id": 81,
+      "name": "Naina B",
+      "class": "A",
+      "persona": 1
+    },
+    {
+      "student_id": 82,
+      "name": "Meera B",
+      "class": "B",
+      "persona": 2
+    },
+    {
+      "student_id": 83,
+      "name": "Laksh B",
+      "class": "C",
+      "persona": 2
+    },
+    {
+      "student_id": 84,
+      "name": "Aadi B",
+      "class": "D",
+      "persona": 0
+    },
+    {
+      "student_id": 85,
+      "name": "Rudra B",
+      "class": "A",
+      "persona": 0
+    },
+    {
+      "student_id": 86,
+      "name": "Shaurya B",
+      "class": "B",
+      "persona": 0
+    },
+    {
+      "student_id": 87,
+      "name": "Saanvi B",
+      "class": "C",
+      "persona": 1
+    },
+    {
+      "student_id": 88,
+      "name": "Navya B",
+      "class": "D",
+      "persona": 0
+    },
+    {
+      "student_id": 89,
+      "name": "Aarohi B",
+      "class": "A",
+      "persona": 2
+    },
+    {
+      "student_id": 90,
+      "name": "Anika B",
+      "class": "B",
+      "persona": 0
+    },
+    {
+      "student_id": 91,
+      "name": "Hridaan B",
+      "class": "C",
+      "persona": 0
+    },
+    {
+      "student_id": 92,
+      "name": "Aarush B",
+      "class": "D",
+      "persona": 0
+    },
+    {
+      "student_id": 93,
+      "name": "Prisha B",
+      "class": "A",
+      "persona": 1
+    },
+    {
+      "student_id": 94,
+      "name": "Aaradhya B",
+      "class": "B",
+      "persona": 1
+    },
+    {
+      "student_id": 95,
+      "name": "Arihant B",
+      "class": "C",
+      "persona": 0
+    },
+    {
+      "student_id": 96,
+      "name": "Atharv B",
+      "class": "D",
+      "persona": 0
+    },
+    {
+      "student_id": 97,
+      "name": "Ishita B",
+      "class": "A",
+      "persona": 2
+    },
+    {
+      "student_id": 98,
+      "name": "Myra B",
+      "class": "B",
+      "persona": 1
+    },
+    {
+      "student_id": 99,
+      "name": "Reva B",
+      "class": "C",
+      "persona": 2
+    },
+    {
+      "student_id": 100,
+      "name": "Sarika B",
+      "class": "D",
+      "persona": 0
+    },
+    {
+      "student_id": 101,
+      "name": "Aarav C",
+      "class": "A",
+      "persona": 2
+    },
+    {
+      "student_id": 102,
+      "name": "Vihaan C",
+      "class": "B",
+      "persona": 1
+    },
+    {
+      "student_id": 103,
+      "name": "Vivaan C",
+      "class": "C",
+      "persona": 0
+    },
+    {
+      "student_id": 104,
+      "name": "Ananya C",
+      "class": "D",
+      "persona": 1
+    },
+    {
+      "student_id": 105,
+      "name": "Diya C",
+      "class": "A",
+      "persona": 0
+    },
+    {
+      "student_id": 106,
+      "name": "Ishaan C",
+      "class": "B",
+      "persona": 0
+    },
+    {
+      "student_id": 107,
+      "name": "Kabir C",
+      "class": "C",
+      "persona": 0
+    },
+    {
+      "student_id": 108,
+      "name": "Advait C",
+      "class": "D",
+      "persona": 0
+    },
+    {
+      "student_id": 109,
+      "name": "Sara C",
+      "class": "A",
+      "persona": 0
+    },
+    {
+      "student_id": 110,
+      "name": "Zara C",
+      "class": "B",
+      "persona": 0
+    },
+    {
+      "student_id": 111,
+      "name": "Riya C",
+      "class": "C",
+      "persona": 2
+    },
+    {
+      "student_id": 112,
+      "name": "Aanya C",
+      "class": "D",
+      "persona": 0
+    },
+    {
+      "student_id": 113,
+      "name": "Arjun C",
+      "class": "A",
+      "persona": 0
+    },
+    {
+      "student_id": 114,
+      "name": "Reyansh C",
+      "class": "B",
+      "persona": 1
+    },
+    {
+      "student_id": 115,
+      "name": "Ira C",
+      "class": "C",
+      "persona": 2
+    },
+    {
+      "student_id": 116,
+      "name": "Mira C",
+      "class": "D",
+      "persona": 1
+    },
+    {
+      "student_id": 117,
+      "name": "Neel C",
+      "class": "A",
+      "persona": 0
+    },
+    {
+      "student_id": 118,
+      "name": "Om C",
+      "class": "B",
+      "persona": 0
+    },
+    {
+      "student_id": 119,
+      "name": "Pari C",
+      "class": "C",
+      "persona": 0
+    },
+    {
+      "student_id": 120,
+      "name": "Tara C",
+      "class": "D",
+      "persona": 0
+    }
+  ],
+  "centroids": [
+    {
+      "attention": 68.22033898305085,
+      "focus": 66.33898305084746,
+      "comprehension": 66.98305084745763,
+      "retention": 66.45762711864407,
+      "engagement_time": 47.50847457627118
+    },
+    {
+      "attention": 86.43333333333334,
+      "focus": 86.33333333333333,
+      "comprehension": 84.96666666666667,
+      "retention": 83.93333333333334,
+      "engagement_time": 65.6
+    },
+    {
+      "attention": 89.64516129032258,
+      "focus": 87.61290322580645,
+      "comprehension": 90.09677419354838,
+      "retention": 89.48387096774194,
+      "engagement_time": 33.806451612903224
+    }
+  ]
+}
