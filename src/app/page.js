@@ -36,6 +36,17 @@ export default function Home() {
   const [personaFilter, setPersonaFilter] = useState("all");
   const [syncWithSelected, setSyncWithSelected] = useState(true);
   const [uploadHistory, setUploadHistory] = useState([]);
+  // Filters & pagination
+  const [classFilter, setClassFilter] = useState("all");
+  const [scoreRange, setScoreRange] = useState([0, 100]);
+  const [skillRanges, setSkillRanges] = useState({
+    attention: [0, 100],
+    focus: [0, 100],
+    comprehension: [0, 100],
+    retention: [0, 100],
+  });
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   useEffect(() => {
     // Do not auto-load students on first visit; wait for CSV upload or sample load
@@ -134,12 +145,33 @@ export default function Home() {
 
   const selectedStudent = students[radarIndex];
 
-  const cohortStudents = useMemo(() => {
+  const classes = useMemo(() => Array.from(new Set(students.map(s => s.class))), [students]);
+
+  const visibleStudents = useMemo(() => {
     if (!students.length) return [];
-    if (!syncWithSelected || !selectedStudent) return students;
+    const [sMin, sMax] = scoreRange;
+    const inRange = (v, [min, max]) => v >= min && v <= max;
+    return students.filter(s =>
+      (classFilter === "all" || s.class === classFilter) &&
+      inRange(s.assessment_score, [sMin, sMax]) &&
+      inRange(s.attention, skillRanges.attention) &&
+      inRange(s.focus, skillRanges.focus) &&
+      inRange(s.comprehension, skillRanges.comprehension) &&
+      inRange(s.retention, skillRanges.retention)
+    );
+  }, [students, classFilter, scoreRange, skillRanges]);
+
+  const pagedStudents = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return visibleStudents.slice(start, start + pageSize);
+  }, [visibleStudents, page, pageSize]);
+
+  const cohortStudents = useMemo(() => {
+    if (!visibleStudents.length) return [];
+    if (!syncWithSelected || !selectedStudent) return visibleStudents;
     // Use the selected student's class as a cohort
-    return students.filter((s) => s.class === selectedStudent.class);
-  }, [students, syncWithSelected, selectedStudent]);
+    return visibleStudents.filter((s) => s.class === selectedStudent.class);
+  }, [visibleStudents, syncWithSelected, selectedStudent]);
 
   const skillVsScore = useMemo(() => {
     if (!cohortStudents.length) return [];
@@ -305,6 +337,31 @@ export default function Home() {
       )}
 
       {students.length > 0 ? (
+      <section className="border rounded-md p-4">
+        <div className="flex flex-wrap items-end gap-4">
+          <div>
+            <div className="text-xs text-gray-500 mb-1">Class</div>
+            <select className="border rounded px-2 py-1 text-sm" value={classFilter} onChange={(e)=>{setClassFilter(e.target.value); setPage(1);}}>
+              <option value="all">All</option>
+              {classes.map(c => (<option key={c} value={c}>{c}</option>))}
+            </select>
+          </div>
+          <RangeInputs label="Score" value={scoreRange} onChange={(v)=>{setScoreRange(v); setPage(1);}} />
+          <RangeInputs label="Attention" value={skillRanges.attention} onChange={(v)=>{setSkillRanges(prev=>({...prev, attention:v})); setPage(1);}} />
+          <RangeInputs label="Focus" value={skillRanges.focus} onChange={(v)=>{setSkillRanges(prev=>({...prev, focus:v})); setPage(1);}} />
+          <RangeInputs label="Compr." value={skillRanges.comprehension} onChange={(v)=>{setSkillRanges(prev=>({...prev, comprehension:v})); setPage(1);}} />
+          <RangeInputs label="Reten." value={skillRanges.retention} onChange={(v)=>{setSkillRanges(prev=>({...prev, retention:v})); setPage(1);}} />
+          <div className="ml-auto flex items-center gap-2">
+            <div className="text-xs text-gray-500">Rows per page</div>
+            <select className="border rounded px-2 py-1 text-sm" value={pageSize} onChange={(e)=>{setPageSize(Number(e.target.value)); setPage(1);}}>
+              {[10,25,50,100].map(n=> (<option key={n} value={n}>{n}</option>))}
+            </select>
+          </div>
+        </div>
+      </section>
+      ) : null}
+
+      {students.length > 0 ? (
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="h-96 border rounded-md p-4 overflow-hidden">
           <div className="flex items-center justify-between mb-2">
@@ -407,7 +464,13 @@ export default function Home() {
       {students.length > 0 ? (
       <section className="border rounded-md p-4">
         <h2 className="mb-2 font-medium">Students</h2>
-        <StudentsTable data={students} personaById={personaById} />
+        <StudentsTable data={pagedStudents} personaById={personaById} />
+        <Pagination
+          total={visibleStudents.length}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+        />
       </section>
       ) : null}
 
@@ -558,6 +621,35 @@ function Th({ children, onClick, active, dir }) {
 
 function Td({ children }) {
   return <td className="py-2 pr-3">{children}</td>;
+}
+
+function RangeInputs({ label, value, onChange }) {
+  const [min, max] = value;
+  return (
+    <div>
+      <div className="text-xs text-gray-500 mb-1">{label} ({min}-{max})</div>
+      <div className="flex items-center gap-2">
+        <input type="number" className="w-16 border rounded px-2 py-1 text-sm" value={min} min={0} max={100} onChange={(e)=>onChange([Number(e.target.value), max])} />
+        <span className="text-gray-400">–</span>
+        <input type="number" className="w-16 border rounded px-2 py-1 text-sm" value={max} min={0} max={100} onChange={(e)=>onChange([min, Number(e.target.value)])} />
+      </div>
+    </div>
+  );
+}
+
+function Pagination({ total, page, pageSize, onPageChange }) {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const prev = () => onPageChange(Math.max(1, page - 1));
+  const next = () => onPageChange(Math.min(totalPages, page + 1));
+  return (
+    <div className="mt-3 flex items-center justify-between text-sm">
+      <div className="text-gray-500">Showing page {page} of {totalPages} • {total} rows</div>
+      <div className="flex items-center gap-2">
+        <button className="border rounded px-2 py-1 disabled:opacity-50" onClick={prev} disabled={page<=1}>Prev</button>
+        <button className="border rounded px-2 py-1 disabled:opacity-50" onClick={next} disabled={page>=totalPages}>Next</button>
+      </div>
+    </div>
+  );
 }
 
 function parseCsv(text) {
