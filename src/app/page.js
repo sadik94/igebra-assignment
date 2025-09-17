@@ -47,11 +47,52 @@ export default function Home() {
   });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+  const SESSION_KEY = "igebra_session_v1";
 
   useEffect(() => {
     // Do not auto-load students on first visit; wait for CSV upload or sample load
     setLoading(false);
+    // hydrate restore hint
+    const saved = typeof window !== 'undefined' ? window.localStorage.getItem(SESSION_KEY) : null;
+    if (saved && !students.length) {
+      // no-op: we show a restore banner below
+    }
   }, []);
+
+  const saveSession = () => {
+    const payload = {
+      students,
+      radarIndex,
+      personaFilter,
+      syncWithSelected,
+      classFilter,
+      scoreRange,
+      skillRanges,
+      pageSize,
+    };
+    try { window.localStorage.setItem(SESSION_KEY, JSON.stringify(payload)); setUploadInfo({ count: students.length, classes: new Set(students.map(s=>s.class)).size, filename: "session saved"}); } catch {}
+  };
+
+  const restoreSession = () => {
+    try {
+      const saved = window.localStorage.getItem(SESSION_KEY);
+      if (!saved) return;
+      const s = JSON.parse(saved);
+      setStudents(s.students || []);
+      setRadarIndex(s.radarIndex ?? 0);
+      setPersonaFilter(s.personaFilter ?? "all");
+      setSyncWithSelected(!!s.syncWithSelected);
+      setClassFilter(s.classFilter ?? "all");
+      setScoreRange(s.scoreRange ?? [0,100]);
+      setSkillRanges(s.skillRanges ?? {attention:[0,100],focus:[0,100],comprehension:[0,100],retention:[0,100]});
+      setPageSize(s.pageSize ?? 25);
+      setPage(1);
+    } catch {}
+  };
+
+  const clearSession = () => {
+    try { window.localStorage.removeItem(SESSION_KEY); } catch {}
+  };
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -124,6 +165,19 @@ export default function Home() {
     const a = document.createElement("a");
     a.href = url;
     a.download = "students.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadCsv = (rows, filename) => {
+    const csv = toCsv(rows);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -225,6 +279,16 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {!students.length && (typeof window !== 'undefined' && window.localStorage.getItem(SESSION_KEY)) ? (
+        <div className="border rounded-md p-3 bg-amber-50 text-amber-800 flex items-center justify-between">
+          <div className="text-sm">A saved session was found.</div>
+          <div className="flex items-center gap-2">
+            <button className="text-xs underline" onClick={restoreSession}>Restore</button>
+            <button className="text-xs underline" onClick={clearSession}>Dismiss</button>
+          </div>
+        </div>
+      ) : null}
 
       {filePreview && (
         <div className="border rounded-md p-3 bg-blue-50 text-blue-800">
@@ -464,6 +528,15 @@ export default function Home() {
       {students.length > 0 ? (
       <section className="border rounded-md p-4">
         <h2 className="mb-2 font-medium">Students</h2>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <button className="border rounded px-2 py-1 text-sm" onClick={()=>downloadCsv(students, "students_cleaned.csv")}>Export cleaned CSV</button>
+          <button className="border rounded px-2 py-1 text-sm" onClick={()=>downloadCsv(visibleStudents, "students_filtered.csv")}>Export filtered CSV</button>
+          <div className="ml-auto flex items-center gap-2">
+            <button className="border rounded px-2 py-1 text-sm" onClick={saveSession}>Save session</button>
+            <button className="border rounded px-2 py-1 text-sm" onClick={restoreSession}>Restore</button>
+            <button className="border rounded px-2 py-1 text-sm" onClick={clearSession}>Clear saved</button>
+          </div>
+        </div>
         <StudentsTable data={pagedStudents} personaById={personaById} />
         <Pagination
           total={visibleStudents.length}
