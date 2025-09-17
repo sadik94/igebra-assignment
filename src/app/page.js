@@ -509,7 +509,7 @@ function StudentsTable({ data, personaById }) {
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="text-left border-b">
+            <tr className="text-left border-b border-gray-700">
               <Th onClick={() => setSort("student_id")} active={sortKey==="student_id"} dir={sortDir}>ID</Th>
               <Th onClick={() => setSort("name")} active={sortKey==="name"} dir={sortDir}>Name</Th>
               <Th onClick={() => setSort("class")} active={sortKey==="class"} dir={sortDir}>Class</Th>
@@ -524,7 +524,7 @@ function StudentsTable({ data, personaById }) {
           </thead>
           <tbody>
             {sorted.map((s) => (
-              <tr key={s.student_id} className="border-b hover:bg-gray-50">
+              <tr key={s.student_id} className="border-b border-gray-700 hover:bg-gray-800">
                 <Td>{s.student_id}</Td>
                 <Td>{s.name}</Td>
                 <Td>{s.class}</Td>
