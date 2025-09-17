@@ -20,6 +20,7 @@ import {
   Radar,
 } from "recharts";
 import { useRef } from "react";
+import * as htmlToImage from 'html-to-image';
 
 export default function Home() {
   const [students, setStudents] = useState([]);
@@ -49,6 +50,8 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const SESSION_KEY = "igebra_session_v1";
+  const [cohortA, setCohortA] = useState("all");
+  const [cohortB, setCohortB] = useState("");
 
   useEffect(() => {
     // Do not auto-load students on first visit; wait for CSV upload or sample load
@@ -185,6 +188,20 @@ export default function Home() {
     URL.revokeObjectURL(url);
   };
 
+  const downloadChartPng = async (chartId, filename) => {
+    try {
+      const element = document.getElementById(chartId);
+      if (!element) return;
+      const dataUrl = await htmlToImage.toPng(element, { quality: 0.95, pixelRatio: 2 });
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('Failed to export chart:', err);
+    }
+  };
+
   const kpis = useMemo(() => {
     if (!students.length) return null;
     const avg = (arr) => Math.round(arr.reduce((a, b) => a + b, 0) / arr.length);
@@ -244,6 +261,54 @@ export default function Home() {
     const matrix = cols.map(a => cols.map(b => corrGeneric(visibleStudents, a, b)));
     return { cols, matrix };
   }, [visibleStudents]);
+
+  const cohortComparison = useMemo(() => {
+    if (!students.length || !cohortB) return null;
+    const cohortAStudents = cohortA === "all" ? students : students.filter(s => s.class === cohortA);
+    const cohortBStudents = students.filter(s => s.class === cohortB);
+    if (!cohortAStudents.length || !cohortBStudents.length) return null;
+    
+    const avg = (arr, key) => arr.reduce((sum, s) => sum + s[key], 0) / arr.length;
+    const a = {
+      count: cohortAStudents.length,
+      score: avg(cohortAStudents, "assessment_score"),
+      attention: avg(cohortAStudents, "attention"),
+      focus: avg(cohortAStudents, "focus"),
+      comprehension: avg(cohortAStudents, "comprehension"),
+      retention: avg(cohortAStudents, "retention"),
+    };
+    const b = {
+      count: cohortBStudents.length,
+      score: avg(cohortBStudents, "assessment_score"),
+      attention: avg(cohortBStudents, "attention"),
+      focus: avg(cohortBStudents, "focus"),
+      comprehension: avg(cohortBStudents, "comprehension"),
+      retention: avg(cohortBStudents, "retention"),
+    };
+    return { a, b, delta: { score: b.score - a.score, attention: b.attention - a.attention, focus: b.focus - a.focus, comprehension: b.comprehension - a.comprehension, retention: b.retention - a.retention } };
+  }, [students, cohortA, cohortB]);
+
+  const outlierFlags = useMemo(() => {
+    if (!students.length) return {};
+    const flags = {};
+    const skills = ["attention", "focus", "comprehension", "retention", "assessment_score"];
+    skills.forEach(skill => {
+      const values = students.map(s => s[skill]);
+      const median = values.sort((a,b) => a-b)[Math.floor(values.length/2)];
+      const q1 = values.sort((a,b) => a-b)[Math.floor(values.length*0.25)];
+      const q3 = values.sort((a,b) => a-b)[Math.floor(values.length*0.75)];
+      const iqr = q3 - q1;
+      const lowerBound = q1 - 1.5 * iqr;
+      const upperBound = q3 + 1.5 * iqr;
+      students.forEach(s => {
+        if (!flags[s.student_id]) flags[s.student_id] = [];
+        if (s[skill] < lowerBound || s[skill] > upperBound) {
+          flags[s.student_id].push({ skill, value: s[skill], type: s[skill] < lowerBound ? 'low' : 'high' });
+        }
+      });
+    });
+    return flags;
+  }, [students]);
 
   if (loading) return <div className="p-8">Loading…</div>;
 
@@ -414,19 +479,64 @@ export default function Home() {
         <div className="flex items-end gap-3 flex-wrap">
           <div>
             <div className="text-xs text-gray-500 mb-1">Cohort A</div>
-            <select className="border rounded px-2 py-1 text-sm" value={classFilter} onChange={(e)=>setClassFilter(e.target.value)}>
+            <select className="border rounded px-2 py-1 text-sm" value={cohortA} onChange={(e)=>setCohortA(e.target.value)}>
               <option value="all">All</option>
               {classes.map(c=> <option key={`a-${c}`} value={c}>{c}</option>)}
             </select>
           </div>
           <div>
             <div className="text-xs text-gray-500 mb-1">Cohort B</div>
-            <select className="border rounded px-2 py-1 text-sm" value={classes[0] || ""} onChange={()=>{}}>
+            <select className="border rounded px-2 py-1 text-sm" value={cohortB} onChange={(e)=>setCohortB(e.target.value)}>
+              <option value="">Select class</option>
               {classes.map(c=> <option key={`b-${c}`} value={c}>{c}</option>)}
             </select>
           </div>
-          <div className="text-xs text-gray-500 ml-auto">Select classes to compare. (Coming soon: full deltas)</div>
         </div>
+        {cohortComparison ? (
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="border rounded p-3">
+              <div className="text-sm text-gray-500">Students</div>
+              <div className="text-xl font-semibold">{cohortComparison.a.count} vs {cohortComparison.b.count}</div>
+            </div>
+            <div className="border rounded p-3">
+              <div className="text-sm text-gray-500">Avg Score</div>
+              <div className="text-xl font-semibold">{cohortComparison.a.score.toFixed(1)}</div>
+              <div className={`text-xs ${cohortComparison.delta.score >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {cohortComparison.delta.score >= 0 ? '+' : ''}{cohortComparison.delta.score.toFixed(1)}
+              </div>
+            </div>
+            <div className="border rounded p-3">
+              <div className="text-sm text-gray-500">Attention</div>
+              <div className="text-xl font-semibold">{cohortComparison.a.attention.toFixed(1)}</div>
+              <div className={`text-xs ${cohortComparison.delta.attention >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {cohortComparison.delta.attention >= 0 ? '+' : ''}{cohortComparison.delta.attention.toFixed(1)}
+              </div>
+            </div>
+            <div className="border rounded p-3">
+              <div className="text-sm text-gray-500">Focus</div>
+              <div className="text-xl font-semibold">{cohortComparison.a.focus.toFixed(1)}</div>
+              <div className={`text-xs ${cohortComparison.delta.focus >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {cohortComparison.delta.focus >= 0 ? '+' : ''}{cohortComparison.delta.focus.toFixed(1)}
+              </div>
+            </div>
+            <div className="border rounded p-3">
+              <div className="text-sm text-gray-500">Comprehension</div>
+              <div className="text-xl font-semibold">{cohortComparison.a.comprehension.toFixed(1)}</div>
+              <div className={`text-xs ${cohortComparison.delta.comprehension >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {cohortComparison.delta.comprehension >= 0 ? '+' : ''}{cohortComparison.delta.comprehension.toFixed(1)}
+              </div>
+            </div>
+            <div className="border rounded p-3">
+              <div className="text-sm text-gray-500">Retention</div>
+              <div className="text-xl font-semibold">{cohortComparison.a.retention.toFixed(1)}</div>
+              <div className={`text-xs ${cohortComparison.delta.retention >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {cohortComparison.delta.retention >= 0 ? '+' : ''}{cohortComparison.delta.retention.toFixed(1)}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-xs text-gray-500 mt-2">Select two classes to compare KPIs and deltas.</div>
+        )}
       </section>
       ) : null}
 
@@ -457,13 +567,16 @@ export default function Home() {
 
       {students.length > 0 ? (
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="h-96 border rounded-md p-4 overflow-hidden">
+        <div id="correlation-chart" className="h-96 border rounded-md p-4 overflow-hidden">
           <div className="flex items-center justify-between mb-2">
             <h2 className="font-medium">Correlation with Assessment Score</h2>
-            <label className="text-xs inline-flex items-center gap-2">
-              <input type="checkbox" className="accent-indigo-600" checked={syncWithSelected} onChange={(e)=>setSyncWithSelected(e.target.checked)} />
-              {"Sync with selected student\u2019s class"}
-            </label>
+            <div className="flex items-center gap-2">
+              <label className="text-xs inline-flex items-center gap-2">
+                <input type="checkbox" className="accent-indigo-600" checked={syncWithSelected} onChange={(e)=>setSyncWithSelected(e.target.checked)} />
+                {"Sync with selected student\u2019s class"}
+              </label>
+              <button className="text-xs border rounded px-2 py-1" onClick={()=>downloadChartPng('correlation-chart', 'correlation-chart.png')}>PNG</button>
+            </div>
           </div>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={skillVsScore} margin={{ top: 10, right: 10, left: 10, bottom: 40 }}>
@@ -476,8 +589,11 @@ export default function Home() {
           </ResponsiveContainer>
         </div>
 
-        <div className="h-96 border rounded-md p-4 overflow-hidden">
-          <h2 className="mb-2 font-medium">Attention vs Assessment Score</h2>
+        <div id="scatter-chart" className="h-96 border rounded-md p-4 overflow-hidden">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-medium">Attention vs Assessment Score</h2>
+            <button className="text-xs border rounded px-2 py-1" onClick={()=>downloadChartPng('scatter-chart', 'scatter-chart.png')}>PNG</button>
+          </div>
           <ResponsiveContainer width="100%" height="100%">
             <ScatterChart margin={{ top: 10, right: 10, left: 10, bottom: 40 }}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -492,20 +608,23 @@ export default function Home() {
           </ResponsiveContainer>
         </div>
 
-        <div className="h-96 border rounded-md p-4 overflow-hidden">
+        <div id="radar-chart" className="h-96 border rounded-md p-4 overflow-hidden">
           <div className="flex items-center justify-between mb-2">
             <h2 className="font-medium">Student Profile (Radar)</h2>
-            <select
-              className="border rounded px-2 py-1 text-sm"
-              value={radarIndex}
-              onChange={(e) => setRadarIndex(Number(e.target.value))}
-            >
-              {students.map((s, i) => (
-                <option key={s.student_id} value={i}>
-                  {s.name} (#{s.student_id})
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-2">
+              <select
+                className="border rounded px-2 py-1 text-sm"
+                value={radarIndex}
+                onChange={(e) => setRadarIndex(Number(e.target.value))}
+              >
+                {students.map((s, i) => (
+                  <option key={s.student_id} value={i}>
+                    {s.name} (#{s.student_id})
+                  </option>
+                ))}
+              </select>
+              <button className="text-xs border rounded px-2 py-1" onClick={()=>downloadChartPng('radar-chart', 'radar-chart.png')}>PNG</button>
+            </div>
           </div>
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart
@@ -597,7 +716,7 @@ export default function Home() {
             <button className="border rounded px-2 py-1 text-sm" onClick={clearSession}>Clear saved</button>
           </div>
         </div>
-        <StudentsTable data={pagedStudents} personaById={personaById} />
+        <StudentsTable data={pagedStudents} personaById={personaById} outlierFlags={outlierFlags} />
         <Pagination
           total={visibleStudents.length}
           page={page}
@@ -684,7 +803,7 @@ function topCorrelation(rows) {
   return `${best.skill} (${best.score})`;
 }
 
-function StudentsTable({ data, personaById }) {
+function StudentsTable({ data, personaById, outlierFlags }) {
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState("student_id");
   const [sortDir, setSortDir] = useState("asc");
@@ -744,20 +863,24 @@ function StudentsTable({ data, personaById }) {
             </tr>
           </thead>
           <tbody>
-            {sorted.map((s) => (
-              <tr key={s.student_id} className="border-b border-gray-700 hover:bg-gray-800">
-                <Td>{s.student_id}</Td>
-                <Td>{s.name}</Td>
-                <Td>{s.class}</Td>
-                <Td>{personaById[s.student_id] ?? "-"}</Td>
-                <Td>{s.attention}</Td>
-                <Td>{s.focus}</Td>
-                <Td>{s.comprehension}</Td>
-                <Td>{s.retention}</Td>
-                <Td>{s.engagement_time}</Td>
-                <Td>{s.assessment_score}</Td>
-              </tr>
-            ))}
+            {sorted.map((s) => {
+              const outliers = outlierFlags[s.student_id] || [];
+              const hasOutliers = outliers.length > 0;
+              return (
+                <tr key={s.student_id} className={`border-b border-gray-700 hover:bg-gray-800 ${hasOutliers ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''}`}>
+                  <Td>{s.student_id}</Td>
+                  <Td>{s.name}</Td>
+                  <Td>{s.class}</Td>
+                  <Td>{personaById[s.student_id] ?? "-"}</Td>
+                  <Td className={outliers.find(o => o.skill === 'attention') ? 'bg-red-100 dark:bg-red-900/30' : ''}>{s.attention}</Td>
+                  <Td className={outliers.find(o => o.skill === 'focus') ? 'bg-red-100 dark:bg-red-900/30' : ''}>{s.focus}</Td>
+                  <Td className={outliers.find(o => o.skill === 'comprehension') ? 'bg-red-100 dark:bg-red-900/30' : ''}>{s.comprehension}</Td>
+                  <Td className={outliers.find(o => o.skill === 'retention') ? 'bg-red-100 dark:bg-red-900/30' : ''}>{s.retention}</Td>
+                  <Td>{s.engagement_time}</Td>
+                  <Td className={outliers.find(o => o.skill === 'assessment_score') ? 'bg-red-100 dark:bg-red-900/30' : ''}>{s.assessment_score}</Td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
