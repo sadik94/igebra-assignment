@@ -22,8 +22,12 @@ import {
 
 export default function Home() {
   const [students, setStudents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [uploadInfo, setUploadInfo] = useState(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [filePreview, setFilePreview] = useState(null);
   const [modelMetrics, setModelMetrics] = useState(null);
   const [modelInfo, setModelInfo] = useState(null);
   const [personaById, setPersonaById] = useState({});
@@ -31,36 +35,89 @@ export default function Home() {
   const [radarIndex, setRadarIndex] = useState(0);
   const [personaFilter, setPersonaFilter] = useState("all");
   const [syncWithSelected, setSyncWithSelected] = useState(true);
+  const [uploadHistory, setUploadHistory] = useState([]);
 
   useEffect(() => {
-    Promise.all([
-      fetch("/data/students.json").then((r) => r.json()),
-      fetch("/analysis/model.json").then((r) => r.ok ? r.json() : null).catch(() => null),
-      fetch("/analysis/personas.json").then((r) => r.ok ? r.json() : null).catch(() => null),
-    ])
-      .then(([studentsData, modelData, personasData]) => {
-        setStudents(studentsData);
-        if (modelData) {
-          setModelInfo(modelData);
-          if (modelData.metrics) setModelMetrics(modelData.metrics);
-        }
-        if (personasData?.personas) {
-          const map = {};
-          for (const p of personasData.personas) map[p.student_id] = p.persona;
-          setPersonaById(map);
-          const counts = personasData.personas.reduce((acc, p) => {
-            acc[p.persona] = (acc[p.persona] || 0) + 1;
-            return acc;
-          }, {});
-          setPersonaCounts(Object.entries(counts).map(([k,v]) => ({ persona: Number(k), count: v })));
-        }
-        setLoading(false);
-      })
-      .catch(() => {
-        setError("Failed to load data");
-        setLoading(false);
-      });
+    // Do not auto-load students on first visit; wait for CSV upload or sample load
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+        e.preventDefault();
+        document.querySelector('input[type="file"]')?.click();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleCsvUpload = async (file) => {
+    try {
+      if (!file) return;
+      setIsUploading(true);
+      setError("");
+      const maxSizeBytes = 5 * 1024 * 1024;
+      const isCsv = file.type === "text/csv" || file.name.toLowerCase().endsWith(".csv");
+      if (!isCsv) throw new Error("Please upload a .csv file");
+      if (file.size > maxSizeBytes) throw new Error("File too large (max 5 MB)");
+      const text = await file.text();
+      const rows = parseCsv(text);
+      if (!rows.length) throw new Error("Empty CSV");
+      setFilePreview({ name: file.name, size: file.size, rows: rows.length - 1 });
+      const header = rows[0].map((h) => h.trim());
+      const expected = [
+        "student_id",
+        "name",
+        "class",
+        "attention",
+        "focus",
+        "comprehension",
+        "retention",
+        "engagement_time",
+        "assessment_score",
+      ];
+      const ok = expected.every((k, i) => header[i] === k);
+      if (!ok) throw new Error("Invalid CSV header");
+      const data = rows.slice(1).filter(r => r.length && r.some(c => String(c).trim() !== "")).map((r) => ({
+        student_id: Number(r[0]),
+        name: String(r[1]),
+        class: String(r[2]),
+        attention: Number(r[3]),
+        focus: Number(r[4]),
+        comprehension: Number(r[5]),
+        retention: Number(r[6]),
+        engagement_time: Number(r[7]),
+        assessment_score: Number(r[8]),
+      }));
+      setStudents(data);
+      setRadarIndex(0);
+      setPersonaFilter("all");
+      const uniqueClasses = Array.from(new Set(data.map(d => d.class)));
+      setUploadInfo({ count: data.length, classes: uniqueClasses.length, filename: file.name });
+      setError("");
+      setUploadHistory(prev => [{ name: file.name, rows: data.length, when: new Date().toLocaleTimeString() }, ...prev].slice(0,3));
+    } catch (e) {
+      setError(e.message || "Failed to parse CSV");
+    }
+    finally {
+      setIsUploading(false);
+    }
+  };
+
+  const downloadSampleCsv = () => {
+    const csv = toCsv(students);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "students.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const kpis = useMemo(() => {
     if (!students.length) return null;
@@ -95,24 +152,148 @@ export default function Home() {
   }, [cohortStudents]);
 
   if (loading) return <div className="p-8">Loading…</div>;
-  if (error) return <div className="p-8 text-red-600">{error}</div>;
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Cognitive Skills & Performance Dashboard</h1>
-        <div className="flex items-center gap-3">
-          <div className="text-sm text-gray-500">Persona:</div>
-          <select className="border rounded px-2 py-1 text-sm" value={personaFilter} onChange={(e)=>setPersonaFilter(e.target.value)}>
-            <option value="all">All</option>
-            {personaCounts.map(p=> (
-              <option key={p.persona} value={String(p.persona)}>Persona {p.persona}</option>
-            ))}
-          </select>
-        </div>
+    <div className="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
+      <header className="flex flex-col items-center gap-1">
+        <h1 className="text-2xl font-semibold text-center">Cognitive Skills & Performance Dashboard</h1>
+        <p className="text-sm text-gray-500 text-center">Upload a CSV to explore insights, correlations, and student profiles.</p>
+        <div className="text-xs text-gray-400 text-center">💡 Tip: Press Ctrl+O to open file dialog</div>
+        {students.length > 0 ? (
+          <div className="flex items-center gap-3">
+            <div className="text-sm text-gray-500">Persona:</div>
+            <select className="border rounded px-2 py-1 text-sm" value={personaFilter} onChange={(e)=>setPersonaFilter(e.target.value)}>
+              <option value="all">All</option>
+              {personaCounts.map(p=> (
+                <option key={p.persona} value={String(p.persona)}>Persona {p.persona}</option>
+              ))}
+            </select>
+          </div>
+        ) : null}
       </header>
 
-      {kpis && (
+      {uploadInfo && (
+        <div className="border rounded-md p-3 bg-green-50 text-green-800 flex items-center justify-between">
+          <div className="text-sm">Loaded <strong>{uploadInfo.count}</strong> rows across <strong>{uploadInfo.classes}
+          </strong> classes from <strong>{uploadInfo.filename}</strong>.</div>
+          <div className="flex items-center gap-3">
+            <button className="text-xs underline" onClick={()=>setUploadInfo(null)}>Dismiss</button>
+            <button
+              className="text-xs underline"
+              onClick={()=>{
+                setStudents([]);
+                setPersonaById({});
+                setPersonaCounts([]);
+                setModelInfo(null);
+                setModelMetrics(null);
+                setUploadInfo(null);
+                setFilePreview(null);
+              }}
+            >Clear data</button>
+          </div>
+        </div>
+      )}
+
+      {filePreview && (
+        <div className="border rounded-md p-3 bg-blue-50 text-blue-800">
+          <div className="text-sm">
+            📄 <strong>{filePreview.name}</strong> ({Math.round(filePreview.size / 1024)} KB) • {filePreview.rows} rows detected
+          </div>
+        </div>
+      )}
+
+      {uploadHistory.length > 0 ? (
+        <div className="border rounded-md p-3 bg-white/5">
+          <div className="text-xs text-gray-500 mb-1">Recent uploads</div>
+          <ul className="text-sm grid sm:grid-cols-3 gap-2">
+            {uploadHistory.map((u, i) => (
+              <li key={`${u.name}-${i}`} className="border rounded px-2 py-1 flex items-center justify-between">
+                <span className="truncate mr-2" title={u.name}>{u.name}</span>
+                <span className="text-xs text-gray-500">{u.rows} rows • {u.when}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      <section
+        className={`border rounded-lg p-5 bg-white/5 ${isDragOver ? "ring-2 ring-indigo-500 bg-indigo-50" : ""}`}
+        onDragOver={(e)=>{e.preventDefault(); setIsDragOver(true);}}
+        onDragLeave={()=>setIsDragOver(false)}
+        onDrop={async (e)=>{e.preventDefault(); setIsDragOver(false); const f=e.dataTransfer?.files?.[0]; if (f) await handleCsvUpload(f);}}
+      >
+        <div className="grid gap-4 lg:grid-cols-3 lg:gap-6">
+          <div className="lg:col-span-2 space-y-2">
+            <h2 className="font-medium text-lg">Upload CSV</h2>
+            <p className="text-sm text-gray-500">Upload a CSV with any number of students. Drag and drop into this panel or use the file picker.</p>
+            <div className="text-xs text-gray-500 flex flex-wrap gap-2">
+              <span className="opacity-70">Required columns:</span>
+              {["student_id","name","class","attention","focus","comprehension","retention","engagement_time","assessment_score"].map(k=> (
+                <code key={k} className="px-2 py-0.5 rounded bg-gray-100 text-gray-700">{k}</code>
+              ))}
+            </div>
+            {error ? <div className="text-sm text-red-600">{error}</div> : null}
+            <ul className="text-xs text-gray-500 list-disc pl-5 space-y-1 mt-2">
+              <li>The first row must be the exact header shown above.</li>
+              <li>Skill and score values should be numeric in the range 0–100.</li>
+              <li>Max file size 5 MB. Accepted type: .csv</li>
+            </ul>
+            <div className="pt-2">
+              <button
+                className="text-xs underline"
+                onClick={()=> navigator.clipboard?.writeText("student_id,name,class,attention,focus,comprehension,retention,engagement_time,assessment_score")}
+              >Copy header to clipboard</button>
+            </div>
+          </div>
+          <div className="flex flex-col items-stretch gap-3">
+            <label className="border-2 border-dashed rounded-md p-4 text-center cursor-pointer hover:bg-gray-50 transition">
+              <span className="block text-sm mb-2">
+                {isUploading ? (
+                  <span className="inline-flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+                    Processing...
+                  </span>
+                ) : (
+                  "Choose CSV file"
+                )}
+              </span>
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                onChange={(e) => handleCsvUpload(e.target.files?.[0])}
+                className="hidden"
+                disabled={isUploading}
+              />
+              <span className="text-xs text-gray-500">
+                {isUploading ? "Please wait..." : "Or drag & drop here"}
+              </span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      {students.length === 0 ? (
+        <div className="flex justify-end">
+          <a href="/data/students.csv" download className="rounded-md px-3 py-2 text-sm border hover:bg-gray-50">Download sample CSV</a>
+        </div>
+      ) : null}
+
+      {students.length === 0 ? (
+        <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="border rounded-lg p-4">
+            <div className="text-xs font-semibold text-gray-700 mb-1">Step 1</div>
+            <div className="font-medium mb-1">Prepare your CSV</div>
+            <p className="text-sm text-gray-500">Ensure the header matches and values are numeric. Include any number of rows.</p>
+          </div>
+          <div className="border rounded-lg p-4">
+            <div className="text-xs font-semibold text-gray-700 mb-1">Step 2</div>
+            <div className="font-medium mb-1">Upload and explore</div>
+            <p className="text-sm text-gray-500">Upload the file to unlock dashboards, correlations, and the searchable table.</p>
+          </div>
+        </section>
+      ) : null}
+
+      {students.length > 0 && kpis && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           <Kpi title="Students" value={kpis.count} />
           <Kpi title="Avg Score" value={kpis.score} />
@@ -123,6 +304,7 @@ export default function Home() {
         </div>
       )}
 
+      {students.length > 0 ? (
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="h-96 border rounded-md p-4 overflow-hidden">
           <div className="flex items-center justify-between mb-2">
@@ -188,12 +370,9 @@ export default function Home() {
           </ResponsiveContainer>
         </div>
       </section>
+      ) : null}
 
-      <section>
-        <h2 className="mb-2 font-medium">Students</h2>
-        <StudentsTable data={students.filter(s => personaFilter==='all' ? true : String(personaById[s.student_id])===personaFilter)} personaById={personaById} />
-      </section>
-
+      {students.length > 0 ? (
       <section className="border rounded-md p-4">
         <h2 className="mb-2 font-medium">Insights</h2>
         <ul className="list-disc pl-5 space-y-1 text-sm">
@@ -223,6 +402,9 @@ export default function Home() {
           </div>
         )}
       </section>
+      ) : null}
+
+      <footer className="text-xs text-gray-400 text-center py-4">Upload data remains in your browser; nothing is uploaded to a server.</footer>
     </div>
   );
 }
@@ -369,4 +551,66 @@ function Th({ children, onClick, active, dir }) {
 
 function Td({ children }) {
   return <td className="py-2 pr-3">{children}</td>;
+}
+
+function parseCsv(text) {
+  const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+  const rows = [];
+  for (const line of lines) {
+    if (line.trim() === "") continue;
+    const cells = [];
+    let current = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (ch === "," && !inQuotes) {
+        cells.push(current);
+        current = "";
+      } else {
+        current += ch;
+      }
+    }
+    cells.push(current);
+    rows.push(cells);
+  }
+  return rows;
+}
+
+function toCsv(rows) {
+  const header = [
+    "student_id",
+    "name",
+    "class",
+    "attention",
+    "focus",
+    "comprehension",
+    "retention",
+    "engagement_time",
+    "assessment_score",
+  ];
+  const escapeCell = (v) => {
+    const s = String(v ?? "");
+    const mustQuote = /[",\n]/.test(s);
+    const q = s.replace(/"/g, '""');
+    return mustQuote ? `"${q}"` : q;
+  };
+  const body = rows.map((r) => [
+    r.student_id,
+    r.name,
+    r.class,
+    r.attention,
+    r.focus,
+    r.comprehension,
+    r.retention,
+    r.engagement_time,
+    r.assessment_score,
+  ].map(escapeCell).join(",")).join("\n");
+  return [header.join(","), body].filter(Boolean).join("\n");
 }
