@@ -19,6 +19,7 @@ import {
   PolarRadiusAxis,
   Radar,
 } from "recharts";
+import { useRef } from "react";
 
 export default function Home() {
   const [students, setStudents] = useState([]);
@@ -237,6 +238,13 @@ export default function Home() {
     ];
   }, [cohortStudents]);
 
+  const heatmapData = useMemo(() => {
+    const cols = ["attention","focus","comprehension","retention","assessment_score"];
+    if (!visibleStudents.length) return { cols, matrix: [] };
+    const matrix = cols.map(a => cols.map(b => corrGeneric(visibleStudents, a, b)));
+    return { cols, matrix };
+  }, [visibleStudents]);
+
   if (loading) return <div className="p-8">Loading…</div>;
 
   return (
@@ -400,6 +408,28 @@ export default function Home() {
         </div>
       )}
 
+      {visibleStudents.length > 0 ? (
+      <section className="border rounded-md p-4">
+        <h2 className="mb-2 font-medium">Cohort Compare</h2>
+        <div className="flex items-end gap-3 flex-wrap">
+          <div>
+            <div className="text-xs text-gray-500 mb-1">Cohort A</div>
+            <select className="border rounded px-2 py-1 text-sm" value={classFilter} onChange={(e)=>setClassFilter(e.target.value)}>
+              <option value="all">All</option>
+              {classes.map(c=> <option key={`a-${c}`} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div>
+            <div className="text-xs text-gray-500 mb-1">Cohort B</div>
+            <select className="border rounded px-2 py-1 text-sm" value={classes[0] || ""} onChange={()=>{}}>
+              {classes.map(c=> <option key={`b-${c}`} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div className="text-xs text-gray-500 ml-auto">Select classes to compare. (Coming soon: full deltas)</div>
+        </div>
+      </section>
+      ) : null}
+
       {students.length > 0 ? (
       <section className="border rounded-md p-4">
         <div className="flex flex-wrap items-end gap-4">
@@ -493,6 +523,36 @@ export default function Home() {
       </section>
       ) : null}
 
+      {visibleStudents.length > 0 ? (
+      <section className="border rounded-md p-4">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="font-medium">Correlation Heatmap</h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr>
+                <th className="text-left p-2">Metric</th>
+                {heatmapData.cols.map((c)=> <th key={c} className="p-2 text-left">{c}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {heatmapData.cols.map((rowKey, i) => (
+                <tr key={rowKey}>
+                  <td className="p-2 font-medium">{rowKey}</td>
+                  {heatmapData.matrix[i].map((v,j) => (
+                    <td key={`${i}-${j}`} className="p-2">
+                      <span className="inline-block rounded px-2 py-1" style={{backgroundColor: heatColor(v), color: Math.abs(v) > 0.6 ? '#fff' : '#111'}}>{v.toFixed(2)}</span>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      ) : null}
+
       {students.length > 0 ? (
       <section className="border rounded-md p-4">
         <h2 className="mb-2 font-medium">Insights</h2>
@@ -580,6 +640,31 @@ function corr(rows, key) {
   }
   const den = Math.sqrt(dx * dy) || 1;
   return +(num / den).toFixed(2);
+}
+
+function corrGeneric(rows, keyX, keyY) {
+  const xs = rows.map((r) => r[keyX]);
+  const ys = rows.map((r) => r[keyY]);
+  const n = xs.length;
+  const mean = (a) => a.reduce((s, v) => s + v, 0) / a.length;
+  const mx = mean(xs);
+  const my = mean(ys);
+  let num = 0; let dx = 0; let dy = 0;
+  for (let i = 0; i < n; i++) {
+    const vx = xs[i] - mx; const vy = ys[i] - my;
+    num += vx * vy; dx += vx * vx; dy += vy * vy;
+  }
+  const den = Math.sqrt(dx * dy) || 1;
+  return num / den;
+}
+
+function heatColor(v) {
+  // v in [-1,1]; blue for negative, white near 0, red for positive
+  const t = (v + 1) / 2; // 0..1
+  const r = Math.round(255 * t);
+  const g = Math.round(255 * (1 - Math.abs(v)));
+  const b = Math.round(255 * (1 - t));
+  return `rgb(${r},${g},${b})`;
 }
 
 function toRadarData(s) {
