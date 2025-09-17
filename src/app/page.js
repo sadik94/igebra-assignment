@@ -404,6 +404,13 @@ export default function Home() {
       </section>
       ) : null}
 
+      {students.length > 0 ? (
+      <section className="border rounded-md p-4">
+        <h2 className="mb-2 font-medium">Students</h2>
+        <StudentsTable data={students} personaById={personaById} />
+      </section>
+      ) : null}
+
       <footer className="text-xs text-gray-400 text-center py-4">Upload data remains in your browser; nothing is uploaded to a server.</footer>
     </div>
   );
